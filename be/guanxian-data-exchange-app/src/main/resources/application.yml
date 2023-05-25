@@ -1,0 +1,227 @@
+project:
+  groupId: @project.groupId@
+  version: @project.version@
+  artifactId: @project.artifactId@
+
+spring:
+  application:
+    name: guanxian-data-exchange
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      #限制报文大小，post请求大小限制,undertow里的设置不会生效
+      max-request-size: 200MB
+      max-file-size: 500MB
+  mvc:
+    async:
+      # 异步执行请求超时时长（毫秒）
+      request-timeout: 60000
+  # 数据源连接池配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://mysql:3306/guanxian_data_exchange?characterEncoding=utf8&useSSL=false&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    username: guanxian_data_exchange
+    password:
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: HikariCP
+      connection-test-query: select 1
+      minimum-idle: 10
+      # 业务根据自己需要进行合理调整
+      maximum-pool-size: 30
+  h2:
+    console:
+      settings:
+        web-allow-others: true
+  liquibase:
+    enabled: true
+    databaseChangeLogTable: "DATABASECHANGELOG_GUANXIAN_DATA_EXCHANGE"
+    databaseChangeLogLockTable: "DATABASECHANGELOGLOCK_GUANXIAN_DATA_EXCHANGE"
+    parameters:
+      tablePrefix: &tablePrefix ""
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+  cloud:
+    # BLOCK INSERT: spring.cloud
+  devtools:
+    restart:
+      # 热更新 可以改为false 关闭热更新
+      enabled: false
+      # 热更新加载目录
+      additional-paths:
+      # 热更新排除更新目录
+      additional-exclude:
+  # BLOCK INSERT: spring
+  redis:
+    # --- redis单机版: 开始 ---
+    #设置服务器地址，默认为redis
+    host: redis
+    #设置服务器端口号，默认为6379
+    port: 6379
+    #设置数据库索引，默认为0
+    database: 0
+    # --- redis单机版: 结束 ---
+
+    # --- redis集群版: 开始 ---
+#    cluster:
+#      nodes:
+#        - redis-0:6379
+#        - redis-1:6379
+#        - redis-2:6379
+#        - redis-3:6379
+#        - redis-4:6379
+#        - redis-5:6379
+#      max-redirects: 3 # 获取失败 最大重定向次数
+    # --- redis集群版: 结束 ---
+
+    #Redis默认不需要连接密码
+    password:
+    #设置连接超时时间
+    timeout: 3s
+    lettuce:
+      cluster:
+        refresh:
+          period: 60
+          adaptive: true
+      pool:
+        #连接池大小，默认为8
+        max-active: 20
+        #最大空闲连接数
+        max-idle: 100
+        #最小空闲连接数,只有在time-between-eviction-runs设置为正值时才有效
+        min-idle: 50
+        #获取连接的最大阻塞等待时间(-1表示不限制)
+        max-wait: 3s
+        #空闲连接检查线程运行周期
+        time-between-eviction-runs: 3s
+
+
+# MybatisPlus
+mybatis-plus:
+  #type-aliases-package: ${project.groupId}
+  global-config:
+    db-config:
+      tablePrefix: *tablePrefix
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    default-statement-timeout: 50 #单位秒
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# 服务基础配置
+server:
+  port: 8082
+  shutdown: graceful
+  servlet:
+    context-path: /${spring.application.name}
+  forward-headers-strategy: framework
+  tomcat:
+    threads:
+      min-spare: 10
+      max: 200
+    maxConnections: 8192
+    acceptCount: 100
+    connection-timeout: 5000
+
+management:
+  server:
+    port: 8689
+    port-type: DIFFERENT
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      version: ${project.version}
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  health:
+    defaults:
+      enabled: true
+    diskspace:
+      enabled: false
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    root: INFO
+    feign.Logger: INFO
+    org.springframework.cache: INFO
+    # 打印开发工具生成动态执行的SQL
+    com.yunli.midplatform.stepengine.utils.database.mybatis.MybatisHelper: DEBUG
+    @project.groupId@: DEBUG
+
+feign:
+  hystrix:
+    enabled: false
+  client:
+    config:
+      # 可按照服务名，根据实际情况增加配置
+      default:
+        logger-level: BASIC
+        connectTimeout: 2000
+        readTimeout: 50000
+  okhttp:
+    enabled: true
+  httpclient:
+    maxConnections: 200
+    connectionTimeout: 2000
+    connectionTimerRepeat: 3000
+
+# swagger配置
+springdoc:
+  api-docs:
+    enabled: true
+  packagesToScan: ${project.groupId}
+  #或者指定访问接口路径扫描
+  #pathsToMatch: /api/**
+  show-actuator: true
+  swagger-ui:
+    path: /swagger-ui.html
+
+#多租户默认关闭
+enable-multitenant: false
+
+#是否开启允许跨域访问(默认是false)
+crossDomain: false
+
+# 后台抛出异常时是否带入异常详情，开发阶段可开启，便于调试发现问题；线上系统应关闭，避免存在安全信息泄露
+exception:
+  detail: false
+
+# 加密解密
+encrypt:
+  # 密钥
+  key: t8m3rc1wa3pba79y
+  # 偏移量
+  iv: 1a2b3c4d5e6f7g9f
+
+#开发工具配置
+step-engine:
+  # 通用Controller接口是否启用
+  apiEnabled: true
+  # 测试接口是否启用
+  testApiEnabled: false
+
+# 应用管理控制台安全启动校验
+appManager:
+  #应用管理控制台地址
+  feign-url: http://172.26.30.142:31117/
+# BLOCK INSERT: FOOT
+# Minio服务客户端配置，参见 MinioClientConfig类
+minio:
+  endpoint: http://minio:9000
+  accesskey: guanxian_data_exchange
+  secretkey: guanxian_data_exchange
+  defaultBucket: guanxian-data-exchange
+
+oss:
+  upload-temp-path: upload-temp-path
+
+

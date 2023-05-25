@@ -1,0 +1,18 @@
+spring:
+  # 数据源连接池配置
+  datasource:
+    url: jdbc:mysql://172.30.1.144:3306/guanxian_data_exchange_dev?characterEncoding=utf8&useSSL=false
+    username: root
+    password: 1qazxcde32wsX
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: HikariCP
+      connection-test-query: select 1
+      minimum-idle: 10
+      # 业务根据自己需要进行合理调整
+      maximum-pool-size: 30
+  liquibase:
+    enabled: true
+
+  profiles:
+    active: plainlog

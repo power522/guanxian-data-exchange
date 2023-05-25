@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.nameOverride | default .Chart.Name }}
+  labels:
+    app: {{ .Values.nameOverride | default .Chart.Name }}
+    apptype: springboot
+    {{- if .Values.subChartName }}
+    subChart: {{ .Values.subChartName }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicas | default "1" }}
+  selector:
+    matchLabels:
+      app: {{ .Values.nameOverride | default .Chart.Name }}
+      apptype: springboot
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/{{ .Chart.Name }}/actuator/prometheus"
+        prometheus.io/port: "8080"
+      labels:
+        app: {{ .Values.nameOverride | default .Chart.Name }}
+        apptype: springboot
+    spec:
+      initContainers:
+        - name: init
+          image: "{{ .Values.imageRegistry }}/resource:{{ .Chart.Name }}-be-{{ .Chart.AppVersion }}{{ .Values.global.imageVersionSuffix }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default .Values.imagePullPolicy | default "Always" }}
+          command:
+            - sh
+          args:
+            - -c
+            - |
+              set -ex;
+              ls -l /apps
+              cp /apps/* /tmp/
+
+              modeStr=develop
+              gmodeStr={{ .Values.global.mode }}
+              if [ $modeStr != $gmodeStr ]; then
+                # liquibase 自动关闭，避免反复重启时锁住liquibase
+                a=`date +"%s"`
+                b={{ now | unixEpoch }}
+                c=`expr $a - $b`
+                echo "a=$a, b=$b, a-b=$c, liquibase_auto_close_seconds={{ .Values.liquibase_auto_close_seconds | default "36000" }}"
+                if [ $c -gt {{ .Values.liquibase_auto_close_seconds | default "36000" }} ]
+                then
+                 echo -e "\n# a=$a, b=$b, a-b=$c, liquibase_auto_close_seconds={{ .Values.liquibase_auto_close_seconds | default "36000" }}" >> /tmp/application.properties
+                 echo -e "\nspring.liquibase.enabled=false" >> /tmp/application.properties
+                fi
+              fi
+          volumeMounts:
+            - mountPath: /tmp
+              name: apps
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.imageRegistry }}/amazoncorretto:11{{ .Values.global.imageVersionSuffix }}"
+          imagePullPolicy: IfNotPresent
+          workingDir: "/apps"
+          command:
+            - java
+          args:
+            {{- if .Values.java_opts }}
+            {{- range ( regexSplit "\\s+" (trim .Values.java_opts) -1 ) }}
+            - {{ . }}
+            {{- end }}
+            {{- end }}
+            - -Djava.security.egd=file:/dev/./urandom
+            - -jar
+            - /apps/{{ .Chart.Name }}-{{ .Chart.AppVersion }}.jar
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            {{- if .Values.APPLICATION_YAML.xxl }}
+            - containerPort: 9999
+              protocol: TCP
+            {{- end }}
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: management.metrics.tags.releasename
+              value: "{{ .Release.Name }}"
+            - name: management.metrics.tags.namespace
+              value: "{{ .Release.Namespace }}"
+            - name: management.metrics.tags.nameOverride
+              value: "{{ .Values.nameOverride | default .Chart.Name }}"
+            {{- if ne ( toString .Values.global.swaggerEnable ) "true" }}
+            - name: springdoc.api-docs.enabled
+              value: "false"
+            - name: springdoc.swagger-ui.enabled
+              value: "false"
+            {{- end }}
+            {{- if ne ( toString .Values.global.actuatorEnable ) "true" }}
+            - name: management.endpoints.enabled-by-default
+              value: "false"
+            - name: management.endpoint.health.enabled
+              value: "true"
+            {{- end }}
+            {{- if .Values.global.mode }}
+            - name: crossDomain
+              value: "true"
+            - name: stepEngine.testApiEnabled
+              value: "true"
+            {{- end }}
+            - name: RELEASE_NAME
+              value: "{{ .Release.Name }}"
+            - name: NAMESPACE
+              value: "{{ .Release.Namespace }}"
+            - name: CHART_TOKEN
+              value: "{{ .Values.global.__chartToken__ }}"
+            - name: APPMANAGER_URL
+              value: "{{ .Values.global.__appmanagerUrl__ }}"
+            {{- if .Values.env }}
+            {{- toYaml .Values.env | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /apps/application.yaml
+              subPath: application.yaml
+            - mountPath: /apps
+              name: apps
+          livenessProbe:
+            initialDelaySeconds: 200
+            periodSeconds: 10
+            timeoutSeconds: 5
+            httpGet:
+              path: /{{ .Chart.Name }}/actuator/health
+              port: 8080
+          readinessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 100
+            httpGet:
+              path: /{{ .Chart.Name }}/actuator/health
+              port: 8080
+          {{- if .Values.resources.app }}
+          resources:
+            {{- toYaml .Values.resources.app | nindent 12 }}
+          {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            name: {{ .Values.nameOverride | default .Chart.Name }}-cfg
+          name: config
+        - emptyDir: {}
+          name: apps
+
+      {{- if .Values.global.nodeAffinityMatchExpressions }}
+      # 亲和度配置：
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:  # 硬策略
+            nodeSelectorTerms:
+              - matchExpressions:
+                  {{- .Values.global.nodeAffinityMatchExpressions | toYaml | nindent 16 }}
+      {{- end }}
+
+      {{- if .Values.global.tolerations }}
+      # 部署容忍度配置：
+      tolerations:
+        {{- .Values.global.tolerations | toYaml | nindent 8 }}
+      {{- end }}

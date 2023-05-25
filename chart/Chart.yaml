@@ -1,0 +1,82 @@
+apiVersion: v2
+name: guanxian-data-exchange
+version: 1.0.0-dev
+appVersion: 1.0.0-dev
+
+#icon: icon.png
+home: https://www.yunlizhihui.com
+sources:
+description: 冠县三方数据对接
+
+dependencies:
+  - name: yunli-api-gateway-libchart
+    version: ^1.0.0
+    repository: '@mid-platform-release'
+
+annotations:
+  displayName: 冠县三方数据对接
+  group: yunli-service
+  projectParameters: |
+    guanxian-data-exchange.database.key: '冠县三方数据对接数据库（只用于初始化命令），为在应用管理控制台"全局->数据库"中配置的数据库，默认值为 mysql'
+    guanxian-data-exchange.database.host: '冠县三方数据对接数据库 地址，默认值为 mysql'
+    guanxian-data-exchange.database.port: '冠县三方数据对接数据库 端口号，默认值为 3306'
+    guanxian-data-exchange.database.user: '冠县三方数据对接数据库 用户名，默认值为 guanxian_data_exchange'
+    guanxian-data-exchange.database.password: {mem: '冠县三方数据对接数据库 密码', type: SECRET}
+    guanxian-data-exchange.database.name-suffix: '冠县三方数据对接数据库 后缀，用于部署多套环境时使用，比如：_dev、_test，默认值为空'
+    guanxian-data-exchange.database.allow-public-key-retrieval: '如果mysql8数据库，需要配置allowPublicKeyRetrieval=true 否则会报错，默认是空'
+
+    k8s.nodeAffinity.matchExpressions: '部署节点亲和性配置，默认为空，配置示例： [{ key: kubernetes.io/hostname, operator: In, values: [ "node1" ] }]'
+    k8s.tolerations: '部署容忍度配置，默认为空，配置示例：[{ key: "node.kubernetes.io/unschedulable", operator: "Exists", effect: "NoSchedule" } ]'
+
+    common.imageRegistry: '镜像仓库 配置，默认值为 registry.cn-zhangjiakou.aliyuncs.com/yunli_mid_platform'
+    common.imagePullSecrets: '镜像仓库密钥 默认值为 [{name: aliyun}, {name: zhangjiakou-aliyun}, {name: beijing-aliyun}, {name: yunli-ioc}, {name: custom} ]'
+    # BLOCK INSERT: projectParameters
+    common.minio.url: 'Minio对象存储服务 地址，默认值为http://minio:9000'
+    common.minio.key: 'Minio对象存储服务集群Key，为在应用管理控制台"全局->对象存储集群"中配置的数据库，默认值为 minio'
+    guanxian-data-exchange.minio.accesskey: '冠县三方数据对接 Minio访问用户名，默认值为guanxian_data_exchange'
+    guanxian-data-exchange.minio.secretkey: '冠县三方数据对接 Minio访问密码，默认值为guanxian_data_exchange'
+    guanxian-data-exchange.minio.bucket: '冠县三方数据对接 Minio访问 桶名称，默认值为guanxian-data-exchange'
+
+    common.redis.host: 'redis服务主机地址，redis单机时配置，默认值 redis'
+    common.redis.port: 'redis服务端口号，redis单机时配置，默认值 6379'
+    common.redis.database: 'redis服务数据库，redis单机时配置，默认值 0'
+
+    common.redis.cluster.nodes: 'redis集群地址，redis集群时配置，默认值为空，配置如: ["redis-0:6379","redis-1:6379","redis-2:6379","redis-3:6379","redis-4:6379","redis-5:6379"]'
+    common.redis.passport: 'redis服务端密码，默认值为空'
+
+    
+  initCommands: |
+    新增数据库:
+      数据库服务器名称: "[[guanxian-data-exchange.database.key:mysql]]"
+      名称: "guanxian_data_exchange[[guanxian-data-exchange.database.name-suffix:]]"
+
+    # 注意提前创建数据库用户
+
+    授权数据库用户权限:
+      数据库服务器名称: "[[guanxian-data-exchange.database.key:mysql]]"
+      用户名: "[[guanxian-data-exchange.database.user:guanxian_data_exchange]]"
+      允许登录主机: "%"
+      授权数据库: "guanxian_data_exchange[[guanxian-data-exchange.database.name-suffix:]]"
+    
+    # BLOCK INSERT: initCommands
+    新增存储桶:
+      - 对象存储集群Key: "[[common.minio.key:minio]]"
+        名称: "[[guanxian-data-exchange.minio.bucket:guanxian-data-exchange]]"
+
+    设置桶策略:
+      - 对象存储集群Key: "[[common.minio.key:minio]]"
+        名称: "[[guanxian-data-exchange.minio.bucket:guanxian-data-exchange]]"
+        路径: "/"
+        授权: Read
+
+    新增存储用户:
+      - 对象存储集群Key: "[[common.minio.key:minio]]"
+        用户名: "[[guanxian-data-exchange.minio.accesskey:guanxian_data_exchange]]"
+        密码: "[[guanxian-data-exchange.minio.secretkey:guanxian_data_exchange]]"
+
+    新增存储用户权限:
+      - 对象存储集群Key: "[[common.minio.key:minio]]"
+        用户名: "[[guanxian-data-exchange.minio.accesskey:guanxian_data_exchange]]"
+        桶: "[[guanxian-data-exchange.minio.bucket:guanxian-data-exchange]]"
+
+

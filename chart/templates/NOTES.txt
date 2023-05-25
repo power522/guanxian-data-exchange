@@ -1,0 +1,45 @@
+{{.Values.notes}}
+### START LINK CONFIG ###
+name: {{ .Chart.Annotations.displayName | default .Chart.Name }}
+links:
+{{- if .Values.APPLICATION_YAML }}
+{{- if .Values.APPLICATION_YAML.spring }}
+{{- if .Values.APPLICATION_YAML.spring.h2 }}
+{{- if .Values.APPLICATION_YAML.spring.h2.console }}
+{{- if .Values.APPLICATION_YAML.spring.h2.console.enabled }}
+  - key: h2-console-{{ .Chart.Name }}
+    name: H2控制台
+    proxyService: http://{{ .Values.nameOverride | default .Chart.Name }}.{{ .Release.Namespace }}:8080/{{.Chart.Name }}
+    forwardedPrefix: true
+    uri: /h2-console
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if eq ( toString .Values.global.swaggerEnable ) "true" }}
+  - key: swagger-{{ .Chart.Name }}
+    name: API
+    uri: /swagger-ui/index.html
+    forwardedPrefix: true
+    proxyService: http://{{ .Values.nameOverride | default .Chart.Name }}.{{ .Release.Namespace }}:8080/{{.Chart.Name }}
+{{- end }}
+
+{{- if eq ( toString .Values.global.actuatorEnable ) "true" }}
+  - key: actuator
+    name: Actuator
+    uri: actuator
+    proxyService: http://{{ .Values.nameOverride | default .Chart.Name }}.{{ .Release.Namespace }}:8080/{{.Chart.Name }}
+    type: actuator
+{{- end }}
+
+  - key: log
+    name: 日志
+    proxyService: ${getLogUrl({{ .Chart.Name }},{{ .Values.nameOverride | default .Chart.Name }})}
+    type: external
+  - key: monitor
+    name: 监控
+    proxyService: ${getMonitorUrl({{ .Chart.Name }},{{ .Values.nameOverride | default .Chart.Name }})}
+    type: external
+### END LINK CONFIG ###

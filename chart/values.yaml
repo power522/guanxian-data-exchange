@@ -1,0 +1,132 @@
+appVersion: &appVersion 1.0.0-dev
+chartName: &chartName guanxian-data-exchange
+nameOverride: guanxian-data-exchange
+
+#java启动参数
+java_opts: "-Xmx2048m"
+
+### ! k8s部署资源限制 ! ###
+resources:
+  app:
+    limits:
+      cpu: 2000m
+      memory: 2500Mi
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+
+### !!! 用于开发测试：对外端口配置，-1表示不启用，0表示随机端口，大于0表示指定端口 !!! ###
+nodePort: -1
+
+# 这种定义路由片段方式，可以在作为子Chart时，方便被直接引用
+gatewayfragment:
+  parameters:
+    appVersion: *appVersion
+    chartName: *chartName
+#  默认参数和默认值：
+#  DEFAULT_IMAGE_REGISTRY: 取值 .Values.imageRegistry | default .Values.global.imageRegistry
+#  NAME: 取值 .Values.nameOverride | default .Chart.Name
+#  CHART_NAME: 取值 .Chart.Name
+#  NAMESPACE: 取值 .Release.Namespace
+
+
+  auth:
+    app:
+      location: /${chartName}/api/
+      proxy_pass: http://${NAME}.${NAMESPACE}:8080
+    # BLOCK INSERT: gatewayfragment.auth
+    minio:
+      location: /oss/guanxian-data-exchange/
+      proxy_pass: http://minio:9000/guanxian-data-exchange/
+      filters:
+        - RemoveRequestHeader=Authorization
+        - StripPrefix=1
+
+
+  unauth:
+    app:
+      location: /${chartName}/api-unauth/
+      proxy_pass: http://${NAME}.${NAMESPACE}:8080
+    # BLOCK INSERT: gatewayfragment.unauth
+
+#配置文件
+APPLICATION_YAML:
+  systemName: *chartName
+  spring:
+    # 数据源连接池配置
+    datasource:
+      # 如果想使用H2数据库(1.把mysql的url和username注释掉 2.打开h2的driver-class-name,url与username)
+      url: jdbc:mysql://mysql:3306/guanxian_data_exchange?characterEncoding=utf8&useSSL=false&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+      username: guanxian_data_exchange
+      #driver-class-name: org.h2.Driver
+      #url: jdbc:h2:mem:testdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE
+      #username: sa
+      password:
+    h2:
+      console:
+        #是否开启H2数据库web控制台
+        enabled: false
+    liquibase:
+      enabled: true
+
+    # BLOCK INSERT: APPLICATION_YAML.spring
+    redis:
+      # --- redis单机版: 开始 ---
+      #设置服务器地址，默认为redis
+      host: redis
+      #设置服务器端口号，默认为6379
+      port: 6379
+      #设置数据库索引，默认为0
+      database: 0
+      # --- redis单机版: 结束 ---
+
+      # --- redis集群版: 开始 ---
+      #cluster:
+      #  nodes: ["redis-0:6379","redis-1:6379","redis-2:6379","redis-3:6379","redis-4:6379","redis-5:6379"]
+      # --- redis集群版: 结束 ---
+
+      #Redis默认不需要连接密码
+      password:
+
+  appManager:
+    #应用管理控制台地址
+    feign-url: http://172.26.30.142:31117/
+  # BLOCK INSERT: APPLICATION_YAML
+  # Minio服务客户端配置，参见 MinioClientConfig类
+  minio:
+    endpoint: http://minio:9000
+    accesskey: guanxian_data_exchange
+    secretkey: guanxian_data_exchange
+    defaultBucket: guanxian-data-exchange
+
+
+# 自定义环境变量
+#env:
+#- name: XXX
+#  value: "XXX"
+
+#镜像仓库地址
+imageRegistry: registry.cn-zhangjiakou.aliyuncs.com/yunli_mid_platform
+# 拉取策略
+imagePullPolicy: Always #IfNotPresent
+
+#镜像拉取配置
+imagePullSecrets: &imagePullSecrets
+  - name: zhangjiakou-aliyun
+  - name: aliyun
+  - name: beijing-aliyun
+
+global: {}
+# global配置部署镜像后缀，如"-arm64"，表示使用arm64镜像
+  # imageVersionSuffix: "-arm64"
+  # 打开mode这个开发模式，会开启跨域
+  # mode: develop
+  # 是否开启swagger，默认关闭
+  #  swaggerEnable: true
+  # 是否开启actuator，默认关闭
+  #  actuatorEnable: true
+
+  # 部署节点亲和性配置，示例如： [{ key: kubernetes.io/hostname, operator: In, values: [ "node1" ] }]
+  # nodeAffinityMatchExpressions:
+  # 部署容忍度配置，示例如：[{ key: "node.kubernetes.io/unschedulable", operator: "Exists", effect: "NoSchedule" } ]
+  # tolerations:

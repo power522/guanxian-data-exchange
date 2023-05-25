@@ -1,0 +1,9 @@
+databaseChangeLog:
+- includeAll:
+    path: db/changelog/mysql/
+- includeAll:
+    path: db/changelog/h2/
+    errorIfMissingOrEmpty: false
+- includeAll:
+    path: db/changelog/dm8/
+    errorIfMissingOrEmpty: false

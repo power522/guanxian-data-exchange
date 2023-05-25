@@ -1,0 +1,108 @@
+spring:
+  application:
+    enable-multitenant: false
+  # 数据源连接池配置
+  datasource:
+    url: jdbc:mysql://172.30.1.144:3306/guanxian_data_exchange_dev?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 1qazxcde32wsX
+  liquibase:
+    enabled: true
+  servlet:
+    multipart:
+      #限制报文大小，post请求大小限制,undertow里的设置不会生效
+      max-request-size: 200MB
+      max-file-size: 500MB
+  config:
+    activate:
+      on-profile: dev,plainlog
+
+  cloud:
+    # BLOCK INSERT: spring.cloud
+
+  devtools:
+    restart:
+      # 热更新 可以改为false 关闭热更新
+      enabled: true
+      # 热更新加载目录
+      additional-paths:
+      # 热更新排除更新目录
+      additional-exclude:
+  # BLOCK INSERT: spring
+  redis:
+    # --- redis单机版: 开始 ---
+    #设置服务器地址，默认为redis
+    host: redis
+    #设置服务器端口号，默认为6379
+    port: 6379
+    #设置数据库索引，默认为0
+    database: 0
+    # --- redis单机版: 结束 ---
+
+    # --- redis集群版: 开始 ---
+#    cluster:
+#      nodes:
+#        - redis-0:6379
+#        - redis-1:6379
+#        - redis-2:6379
+#        - redis-3:6379
+#        - redis-4:6379
+#        - redis-5:6379
+    # --- redis集群版: 结束 ---
+
+    #Redis默认不需要连接密码
+    password:
+  cache:
+    redis:
+      time-to-live: 600s
+  #type: redis
+
+
+logging:
+  level:
+    # sql日志，注意修改路径
+    @project.groupId@: DEBUG
+
+#是否开启允许跨域访问(默认是false)
+crossDomain: false
+
+#SQL工具实时测试是否开启
+dataToolTestEnabled: true
+#多租户默认关闭
+enable-multitenant: false
+# 开发环境 文档放出 sql测试接口
+springdoc:
+  packagesToScan: com.yunli
+  cache:
+    disabled: true
+# 后台抛出异常时是否带入异常详情，开发阶段可开启，便于调试发现问题；线上系统应关闭，避免存在安全信息泄露
+exception:
+  detail: true
+
+# 加密解密
+encrypt:
+  # 密钥
+  key: ttt1111111111112
+  # 偏移量
+  iv: 1a2b3c4d5e6f7g9f
+
+# 应用管理控制台安全启动校验
+appManager:
+  #应用管理控制台地址
+  feign-url: http://172.26.30.142:31117/
+# BLOCK INSERT: FOOT
+# Minio服务客户端配置，参见 MinioClientConfig类
+minio:
+  endpoint: http://172.26.30.156:30112
+  accesskey: admin
+  secretkey: minio@Yunli123
+  defaultBucket: default
+
+
+
+#开发工具配置
+step-engine:
+  # 通用Controller接口是否启用
+  apiEnabled: true
+  # 测试接口是否启用
+  testApiEnabled: true

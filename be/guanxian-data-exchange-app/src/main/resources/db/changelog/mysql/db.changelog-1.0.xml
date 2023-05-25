@@ -1,0 +1,44 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="devplatform" id="100" objectQuotingStrategy="LEGACY" runOnChange="true" dbms="mysql">
+        <sql dbms="mysql" splitStatements="true" stripComments="false">
+        	-- liquibase formatted sql
+			-- changeset yuangr:2021032501
+        	create table if not exists ${tablePrefix}test_json
+			(
+			    id           char(32) primary key not null,
+			    code         varchar(60)            not null comment '编码',
+			    name         varchar(100)           not null comment '姓名',
+			    delete_flag   tinyint(1)             not null comment '删除标识',
+			    create_time   datetime               not null comment '创建时间',
+			    update_time datetime comment '修改时间',
+			    creator      varchar(100) comment '',
+			    modifier     varchar(100) comment ''
+			);
+			-- comment: 添加表test_json
+			
+			-- changeset liuwei:2021122401
+			ALTER TABLE ${tablePrefix}test_json
+			    ADD COLUMN birthday datetime comment '生日',
+			    ADD COLUMN status varchar(10) default 'VALID' not null comment '状态',
+			    ADD COLUMN version int comment '版本',
+			    ADD COLUMN money decimal(10,2) comment '余额',
+			    ADD COLUMN mem text comment '备注',
+			    ADD COLUMN ext json comment '扩展属性',
+			    ADD COLUMN group_id char(32) comment '分组标识';
+			
+			-- changeset liuwei:2022031601
+			create table if not exists ${tablePrefix}test_rel
+			(
+			    rid           varchar(64) primary key not null,
+			    example_id   varchar(32)           not null comment '外键A',
+			    rel_id       varchar(32)           not null comment '外键B'
+			);
+			
+			
+			-- changeset liuwei:2022040101
+			ALTER TABLE ${tablePrefix}test_json
+			    ADD COLUMN tenant_id varchar(32) not null comment '租户';
+		</sql>
+    </changeSet>
+</databaseChangeLog>

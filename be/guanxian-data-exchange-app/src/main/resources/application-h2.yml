@@ -1,0 +1,55 @@
+spring:
+  # 数据源连接池配置
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:~/test;MODE=MySQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DATABASE_TO_UPPER=FALSE
+    username: sa
+    password:
+  h2:
+    console:
+      #是否开启H2数据库web控制台(http://localhost:8080/xx/h2-console)
+      enabled: true
+      settings:
+        web-allow-others: true
+  liquibase:
+    enabled: true
+
+  config:
+    activate:
+      on-profile: h2,dev,plainlog
+
+  redis:
+    database: 0
+    host: 127.0.0.1
+    port: 6379
+    password: foobar
+    timeout: 10000
+    lettuce:
+      pool:
+        max-idle: 10
+        max-active: 10
+        min-idle: 0
+        max-wait: 10000
+
+#SQL工具实时测试是否开启
+dataToolTestEnabled: true
+
+# 开发环境 文档放出 sql测试接口
+springdoc:
+  packagesToScan: com.yunli
+  cache:
+    disabled: true
+
+
+minio:
+  endpoint: http://127.0.0.1:9000
+  accesskey: admin
+  secretkey: minio@Yunli123
+  defaultBucket: default
+
+#开发工具配置
+step-engine:
+  # 通用Controller接口是否启用
+  apiEnabled: true
+  # 测试接口是否启用
+  testApiEnabled: true

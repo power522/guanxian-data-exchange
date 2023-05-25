@@ -1,0 +1,60 @@
+nameOverride: guanxian-data-exchange
+
+### ! 镜像仓库配置和镜像仓库凭证配置 ! ###
+imageRegistry: "[[common.imageRegistry:registry.cn-zhangjiakou.aliyuncs.com/yunli_mid_platform]]"
+imagePullSecrets: [[common.imagePullSecrets: [{name: aliyun}, {name: zhangjiakou-aliyun}, {name: beijing-aliyun}, {name: yunli-ioc} ] ]]
+
+### !!! 用于开发测试：对外端口配置，-1表示不启用，0表示随机端口，大于0表示指定端口 !!! ###
+nodePort: -1
+
+# 配置路由片段
+gatewayfragment: &guanxian-data-exchange
+  auth:
+    # AUTH START: FE
+    # BLOCK INSERT: gatewayfragment.auth
+    minio:
+      proxy_pass: "[[common.minio.url:http://minio:9000]]/[[guanxian-data-exchange.minio.bucket:guanxian-data-exchange]]/"
+
+    # AUTH END: FE
+  unauth:
+    {}
+
+#配置文件
+APPLICATION_YAML:
+  spring:
+    ### !!! mysql数据库配置，需指定mysql数据库的IP地址，端口，数据库名，登录用户名及密码         !!! ###
+    datasource:
+      url: 'jdbc:mysql://[[guanxian-data-exchange.database.host:mysql]]:[[guanxian-data-exchange.database.port:3306]]/guanxian_data_exchange[[guanxian-data-exchange.database.name-suffix:]]?characterEncoding=utf8&useSSL=false&allowMultiQueries=true&serverTimezone=Asia/Shanghai&[[guanxian-data-exchange.database.allow-public-key-retrieval:]]'
+      #数据库用户
+      username: '[[guanxian-data-exchange.database.user:guanxian_data_exchange]]'
+      #数据库密码
+      password: '[[guanxian-data-exchange.database.password]]'
+
+    # BLOCK INSERT: APPLICATION_YAML.spring
+    redis:
+      # --- redis单机版: 开始 ---
+      #设置服务器地址，默认为redis
+      host: '[[common.redis.host:redis]]'
+      #设置服务器端口号，默认为6379
+      port: [[common.redis.port: 6379]]
+      #设置数据库索引，默认为0
+      database: [[common.redis.database: 0]]
+      # --- redis单机版: 结束 ---
+
+      # --- redis集群版: 开始 ---
+      #cluster:
+      #  nodes: [[common.redis.cluster.nodes:]]
+      # --- redis集群版: 结束 ---
+
+      #Redis默认不需要连接密码
+      password: '[[common.redis.passport:]]'
+
+  # BLOCK INSERT: APPLICATION_YAML
+  # Minio服务客户端配置，参见 MinioClientConfig类
+  minio:
+    endpoint: '[[common.minio.url:http://minio:9000]]'
+    accesskey: '[[guanxian-data-exchange.minio.accesskey:guanxian_data_exchange]]'
+    secretkey: '[[guanxian-data-exchange.minio.secretkey:guanxian_data_exchange]]'
+    defaultBucket: '[[guanxian-data-exchange.minio.bucket:guanxian-data-exchange]]'
+
+

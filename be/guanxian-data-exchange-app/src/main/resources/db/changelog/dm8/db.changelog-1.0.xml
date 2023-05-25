@@ -1,0 +1,34 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+    <changeSet author="devplatform" id="100" objectQuotingStrategy="LEGACY" runOnChange="true" dbms="oracle">
+        <sql dbms="oracle" splitStatements="true" stripComments="false">
+	        create table ${tablePrefix}test_json
+			(
+			    id           VARCHAR2(32) primary key not null,
+			    code         VARCHAR2(60)           not null,
+			    name         VARCHAR2(100)           not null,
+			    delete_flag  NUMBER(3)             not null,
+			    create_time  TIMESTAMP               not null,
+			    update_time  TIMESTAMP,
+			    creator      VARCHAR2(100),
+			    modifier     VARCHAR2(100)
+			);
+			ALTER TABLE ${tablePrefix}test_json ADD birthday TIMESTAMP;
+			ALTER TABLE ${tablePrefix}test_json ADD status VARCHAR2(10) default 'VALID' not null;
+			ALTER TABLE ${tablePrefix}test_json ADD version INTEGER;
+			ALTER TABLE ${tablePrefix}test_json ADD money decimal(10,2);
+			ALTER TABLE ${tablePrefix}test_json ADD mem CLOB;
+			ALTER TABLE ${tablePrefix}test_json ADD ext CLOB;
+			ALTER TABLE ${tablePrefix}test_json ADD group_id VARCHAR2(32);
+			
+			create table ${tablePrefix}test_rel
+			(
+			    rid          VARCHAR2(64) primary key not null,
+			    example_id   VARCHAR2(32)           not null,
+			    rel_id       VARCHAR2(32)           not null
+			);
+			
+			ALTER TABLE ${tablePrefix}test_json ADD tenant_id VARCHAR2(32)  not null;
+		</sql>
+    </changeSet>
+</databaseChangeLog>

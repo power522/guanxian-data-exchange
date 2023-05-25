@@ -1,0 +1,12 @@
+spring:
+  # 数据源连接池配置
+  datasource:
+    driver-class-name: dm.jdbc.driver.DmDriver
+    url: jdbc:dm://localhost:5236?compatibleMode=1&columnNameUpperCase=true
+    username: test
+    password: 123456789
+  liquibase:
+    enabled: true
+  config:
+    activate:
+      on-profile: dm8,dev,plainlog
